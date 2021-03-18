@@ -1,0 +1,148 @@
+{
+  "$schema-template": "2.0.0",
+  "modulesContent": {
+    "$edgeAgent": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "runtime": {
+          "type": "docker",
+          "settings": {
+            "minDockerVersion": "v1.25",
+            "loggingOptions": "",
+            "registryCredentials": {
+              "iloh123reg": {
+                "username": "$CONTAINER_REGISTRY_USERNAME_iloh123reg",
+                "password": "$CONTAINER_REGISTRY_PASSWORD_iloh123reg",
+                "address": "ilohcr1234.azurecr.io"
+              }
+            }
+          }
+        },
+        "systemModules": {
+          "edgeAgent": {
+            "type": "docker",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-agent:1.0",
+              "createOptions": {
+                "ExposedPorts": {
+                  "9600/tcp": {}
+                },
+                "HostConfig": {
+                  "PortBindings": {
+                    "9600/tcp": [
+                      {
+                        "HostPort": "9601"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "edgeHub": {
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "mcr.microsoft.com/azureiotedge-hub:1.0",
+              "createOptions": {
+                "ExposedPorts": {
+                  "9600/tcp": {},
+                  "5671/tcp": {},
+                  "8883/tcp": {}
+                },
+                "HostConfig": {
+                  "PortBindings": {
+                    "5671/tcp": [
+                      {
+                        "HostPort": "5671"
+                      }
+                    ],
+                    "8883/tcp": [
+                      {
+                        "HostPort": "8883"
+                      }
+                    ],
+                    "443/tcp": [
+                      {
+                        "HostPort": "443"
+                      }
+                    ],
+                    "9600/tcp": [
+                      {
+                        "HostPort": "9602"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "modules": {
+          "SimulatedDeviceModule": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "${MODULES.SimulatedDeviceModule}",
+              "createOptions": {}
+            }
+          },
+          "logspout": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "veyalla/logspout-loganalytics:linux-amd64",
+              "createOptions": "{ \"Env\": [ \"BACKLOG=false\",\"LOGSPOUT=ignore\", \"LOGANALYTICS_WORKSPACE_ID=9547f36a-da6d-4f86-bf82-a5a9bccb2d2e\",\"LOGANALYTICS_WORKSPACE_SECRET=2rKT9ZnVe4iIXKu4q7wDuUmc0tNKCItxBK95QSlod6G7SthQL7kRudiqVYczGGHfz/pdrTE5nq407fsZrst7Zw==\"],\"Cmd\": [\"loganalytics://\"],\"HostConfig\": { \"Binds\": [\"/var/run/docker.sock:/var/run/docker.sock\"]}}"
+            }
+          },
+          "MetricsCollector": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "ilohcr1234.azurecr.io/metricscollector:0.8-iloh",
+              "createOptions": {}
+            },
+            "env": {
+              "AzMonWorkspaceId": {
+                "value": "9547f36a-da6d-4f86-bf82-a5a9bccb2d2e"
+              },
+              "AzMonWorkspaceKey": {
+                "value": "2rKT9ZnVe4iIXKu4q7wDuUmc0tNKCItxBK95QSlod6G7SthQL7kRudiqVYczGGHfz/pdrTE5nq407fsZrst7Zw=="
+              }
+            }
+          },
+          "Watchdog": {
+            "version": "1.0",
+            "type": "docker",
+            "status": "running",
+            "restartPolicy": "always",
+            "settings": {
+              "image": "${MODULES.Watchdog}",
+              "createOptions": {}
+            }
+          }
+        }
+      }
+    },
+    "$edgeHub": {
+      "properties.desired": {
+        "schemaVersion": "1.0",
+        "routes": {
+          "sensorToSimulatedDeviceModule": "FROM /messages/modules/SimulatedDeviceModule/outputs/* INTO $upstream",
+          "MetricsCollectorToIoTHub": "FROM /messages/modules/MetricsCollector/outputs/* INTO $upstream",
+          "WatchdogToIoTHub": "FROM /messages/modules/Watchdog/outputs/* INTO $upstream"
+        },
+        "storeAndForwardConfiguration": {
+          "timeToLiveSecs": 7200
+        }
+      }
+    }
+  }
+}

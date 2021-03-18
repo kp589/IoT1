@@ -1,0 +1,27 @@
+{
+    "HostConfig": {
+        "PortBindings": {
+            "443/tcp": [
+                {
+                    "HostPort": "443"
+                }
+            ],
+            "5671/tcp": [
+                {
+                    "HostPort": "5671"
+                }
+            ],
+            "8883/tcp": [
+                {
+                    "HostPort": "8883"
+                }
+            ]
+        }
+    },
+    "User": "ContainerAdministrator",
+    "ExposedPorts": {
+        "9600/tcp": {},
+        "5671/tcp": {},
+        "8883/tcp": {}
+    }
+}
